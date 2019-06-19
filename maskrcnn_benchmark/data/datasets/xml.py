@@ -14,17 +14,8 @@ else:
 from maskrcnn_benchmark.structures.bounding_box import BoxList
 from maskrcnn_benchmark.structures.segmentation_mask import SegmentationMask
 
-def get_AIshufa_dataset():
-    classes = (
-        '__background__', 'xiegou', 'piezhe', 'shuti', 'shu', 'hengzhewangou', 'wangou', 'dian', 'piedian', 'hengzheti', 'hengzhezhezhegou', 'hengzhegou', 'na', 'shuwangou', 'ti', 'shuzhezhegou', 'hengzhe', 'pie', 'hengpie', 'heng', 'hengzhezhepie', 'shugou', 'shuzhepie', 'shuzhe'
-    )
-    return classes
-
 class XMLDataset(torch.utils.data.Dataset):
-
-    CLASSES = get_AIshufa_dataset()
-
-    def __init__(self, data_dir, split, use_difficult=False, transforms=None):
+    def __init__(self, data_dir, split, cfg, use_difficult=False, transforms=None):
         self.root = data_dir
         self.image_set = split
         self.keep_difficult = use_difficult
@@ -39,8 +30,8 @@ class XMLDataset(torch.utils.data.Dataset):
         self.ids = [x.strip("\n") for x in self.ids]
         self.id_to_img_map = {k: v for k, v in enumerate(self.ids)}
 
-        cls = XMLDataset.CLASSES
-        self.class_to_ind = dict(zip(cls, range(len(cls))))
+        self.classnames = cfg.DATASETS.CLASSNAMES
+        self.class_to_ind = dict(zip(self.classnames, range(len(self.classnames))))
 
     def __getitem__(self, index):
         img_id = self.ids[index]
@@ -109,7 +100,8 @@ class XMLDataset(torch.utils.data.Dataset):
             # if not self.keep_difficult and difficult:
             #     continue
             name = obj.find("name").text.strip()
-            if name not in XMLDataset.CLASSES:
+            if name not in self.classnames:
+                print('{} not in dataset {}'.format(name, self.classnames))
                 continue
             gt_classes.append(self.class_to_ind[name])
             # difficult_boxes.append(difficult)
@@ -160,4 +152,4 @@ class XMLDataset(torch.utils.data.Dataset):
         return {"height": im_info[0], "width": im_info[1]}
 
     def map_class_id_to_class_name(self, class_id):
-        return XMLDataset.CLASSES[class_id]
+        return self.classnames[class_id]

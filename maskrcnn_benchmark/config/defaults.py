@@ -66,6 +66,7 @@ _C.INPUT.VERTICAL_FLIP_PROB_TRAIN = 0.0
 # Dataset
 # -----------------------------------------------------------------------------
 _C.DATASETS = CN()
+_C.DATASETS.CLASSNAMES = ()
 # List of the dataset names for training, as present in paths_catalog.py
 _C.DATASETS.TRAIN = ()
 # List of the dataset names for testing, as present in paths_catalog.py
@@ -76,7 +77,7 @@ _C.DATASETS.TEST = ()
 # -----------------------------------------------------------------------------
 _C.DATALOADER = CN()
 # Number of data loading threads
-_C.DATALOADER.NUM_WORKERS = 4
+_C.DATALOADER.NUM_WORKERS = 1
 # If > 0, this enforces that each collated batch should have a size divisible
 # by SIZE_DIVISIBILITY
 _C.DATALOADER.SIZE_DIVISIBILITY = 0
