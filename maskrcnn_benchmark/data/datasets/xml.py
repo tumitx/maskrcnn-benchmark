@@ -22,7 +22,7 @@ class XMLDataset(torch.utils.data.Dataset):
         self.transforms = transforms
 
         self._annopath = os.path.join(self.root, "xmls", "%s.xml")
-        self._imgpath = os.path.join(self.root, "images", "%s.png")
+        self._imgpath = os.path.join(self.root, "images", "%s" + cfg.DATASETS.IMGFORMAT)
         self._imgsetpath = os.path.join(self.root, "%s.txt")
 
         with open(self._imgsetpath % self.image_set) as f:
