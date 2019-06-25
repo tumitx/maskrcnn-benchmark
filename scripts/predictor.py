@@ -9,6 +9,9 @@ from maskrcnn_benchmark.structures.image_list import to_image_list
 from maskrcnn_benchmark.modeling.roi_heads.mask_head.inference import Masker
 from maskrcnn_benchmark import layers as L
 from maskrcnn_benchmark.utils import cv2_util
+import xml.etree.ElementTree as ET
+from xml.dom import minidom
+import os
 
 class Resize(object):
     def __init__(self, min_size, max_size):
@@ -110,7 +113,7 @@ class COCODemo(object):
         )
         return transform
 
-    def run_on_opencv_image(self, image):
+    def run_on_opencv_image(self, image, im_name):
         """
         Arguments:
             image (np.ndarray): an image as returned by OpenCV
@@ -132,7 +135,7 @@ class COCODemo(object):
         if self.cfg.MODEL.KEYPOINT_ON:
             result = self.overlay_keypoints(result, top_predictions)
         result = self.overlay_class_names(result, top_predictions)
-
+        self.create_xml(im_name, top_predictions)
         return result
 
     def compute_prediction(self, original_image):
@@ -221,7 +224,7 @@ class COCODemo(object):
             image = cv2.rectangle(
                 image, tuple(top_left), tuple(bottom_right), tuple(color), 1
             )
-
+    
         return image
 
     def overlay_mask(self, image, predictions):
@@ -234,6 +237,7 @@ class COCODemo(object):
             predictions (BoxList): the result of the computation by the model.
                 It should contain the field `mask` and `labels`.
         """
+        
         masks = predictions.get_field("mask").numpy()
         labels = predictions.get_field("labels")
 
@@ -319,6 +323,48 @@ class COCODemo(object):
             )
 
         return image
+    
+    def create_xml(self, im_name, predictions):
+        root = ET.Element('annotation')
+        folder = ET.SubElement(root, 'folder')
+        folder.text = 'imgFoleder'
+        filename = ET.SubElement(root, 'filename')
+        filename.text = im_name
+        size = ET.SubElement(root, 'size')
+        width = ET.SubElement(size, 'width')
+        width.text = str(512)
+        height = ET.SubElement(size, 'height')
+        height.text = str(512)
+        seg = ET.SubElement(root, 'segmented')
+        seg.text = '0'
+        shape = ET.SubElement(root, 'shape_type')
+        shape.text = 'POLYGON'
+        labels = predictions.get_field("labels").tolist()
+        labels = [self.classnames[i] for i in labels]
+        masks = predictions.get_field("mask").numpy()
+
+        for mask, label in zip(masks, labels):
+            thresh = mask[0, :, :, None]
+            contours, hierarchy = cv2_util.findContours(
+                thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
+            )
+            for c in contours:
+                obj = ET.SubElement(root, 'object')
+                name = ET.SubElement(obj, 'name')
+                name.text = label
+                polygon = ET.SubElement(obj, 'polygon')
+                
+                for pt in c:
+                    point = ET.SubElement(polygon, 'point')
+                    point.text = '{},{}'.format(pt[0][0], pt[0][1])
+        tree = minidom.parseString(ET.tostring(root))
+        xml_str = tree.toprettyxml()
+        dom_string = '\n'.join([s for s in xml_str.splitlines() if s.strip()])
+        with open('shufa_out_xmls/{}.xml'.format(os.path.basename(im_name[:-4])), 'w') as f:
+            f.write(dom_string)
+
+
+
 
 import numpy as np
 import matplotlib.pyplot as plt
