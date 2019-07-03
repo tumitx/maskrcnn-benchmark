@@ -51,7 +51,7 @@ for imname in os.listdir('/data/16_AIshufa/imgs_out/1/'):
     image = cv2.imread(os.path.join('/data/16_AIshufa/imgs_out/1/', imname))
     starttime = time.time()
     # compute predictions
-    predictions = coco_demo.run_on_opencv_image(image)
+    predictions = coco_demo.run_on_opencv_image(image, imname)
     endtime = time.time()
     print('{}\ttime: {}'.format(imname, (endtime - starttime)))
     cv2.imwrite(os.path.join('shufa_out', imname),predictions)
